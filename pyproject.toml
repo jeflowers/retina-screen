@@ -1,0 +1,90 @@
+[project]
+name = "retina-screen"
+version = "0.1.0"
+description = "AWS-native reference implementation of a multi-site retinal screening pipeline (portfolio/demo, not real PHI)"
+authors = [
+    { name = "John", email = "jeflowers@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "pydantic>=2.7",
+    "structlog>=24.1",
+    "boto3>=1.34",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.34"]
+
+[project.scripts]
+retina-screen = "retina_screen.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.10,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.3",
+    "pytest-mock>=3.14",
+    "boto3-stubs[s3,dynamodb,events,sagemaker-runtime,bedrock-runtime]>=1.34",
+    "types-PyYAML>=6.0",
+]
+
+# ─── Ruff ──────────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "N",   # pep8-naming
+    "RUF", # ruff-specific
+    "TID", # tidy imports (bans relative imports)
+    "S",   # flake8-bandit (security)
+]
+ignore = [
+    "S101", # allow assert in tests
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*_test.py" = ["S105", "S106", "S311"] # test secrets/randomness allowed in tests
+"conftest.py" = ["S105", "S106"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+# ─── Mypy ──────────────────────────────────────────────────────────────────
+[tool.mypy]
+files = ["src"]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+
+# ─── Pytest ────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["src"]
+python_files = ["*_test.py"]
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = [
+    "error",
+]

@@ -1,0 +1,12 @@
+CLAUDE.local.md
+.claude/settings.local.json
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
