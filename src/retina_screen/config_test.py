@@ -11,11 +11,16 @@ import pytest
 from retina_screen.config import (
     CLASSIFIER_OPTIONS,
     SUMMARIZER_OPTIONS,
+    Config,
     MissingSecretError,
     apply_confidence_floor,
+    build_classifier,
+    build_summarizer,
     load_config,
 )
 from retina_screen.dto import Classification, ConditionProbability
+from retina_screen.ml.classifier import Classifier, MockClassifier
+from retina_screen.ml.summarizer import MockSummarizer, Summarizer
 
 
 @pytest.fixture
@@ -163,3 +168,45 @@ def test_floor_never_auto_clears_low_confidence_referable() -> None:
     c = _classification(confidence=0.1, referable="no")
     assert apply_confidence_floor(c, threshold=0.7) == "review"
     _ = datetime.now(UTC)  # touch datetime import for completeness
+
+
+# ─── Factory: build_classifier / build_summarizer ────────────────────────────
+
+
+def _mock_config(classifier: str = "mock", summarizer: str = "mock") -> Config:
+    return Config(
+        classifier=classifier,  # type: ignore[arg-type]
+        summarizer=summarizer,  # type: ignore[arg-type]
+        confidence_threshold=0.7,
+        aws_region="us-west-2",
+        raw_image_bucket=None,
+        results_table=None,
+        eventbridge_bus=None,
+        sagemaker_endpoint=None,
+        bedrock_classifier_model_id=None,
+        bedrock_summarizer_model_id=None,
+        anthropic_api_key=None,
+        anthropic_model="claude-opus-4-7",
+    )
+
+
+def test_build_classifier_returns_mock_when_selected() -> None:
+    classifier = build_classifier(_mock_config(classifier="mock"))
+    assert isinstance(classifier, MockClassifier)
+    assert isinstance(classifier, Classifier)
+
+
+def test_build_summarizer_returns_mock_when_selected() -> None:
+    summarizer = build_summarizer(_mock_config(summarizer="mock"))
+    assert isinstance(summarizer, MockSummarizer)
+    assert isinstance(summarizer, Summarizer)
+
+
+def test_build_classifier_raises_for_unimplemented_backend() -> None:
+    with pytest.raises(NotImplementedError, match="Phase F"):
+        build_classifier(_mock_config(classifier="sagemaker"))
+
+
+def test_build_summarizer_raises_for_unimplemented_backend() -> None:
+    with pytest.raises(NotImplementedError, match="Phase F"):
+        build_summarizer(_mock_config(summarizer="anthropic"))

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import Literal, cast
 
 from retina_screen.dto import Classification, Referable
+from retina_screen.ml.classifier import Classifier, MockClassifier
+from retina_screen.ml.summarizer import MockSummarizer, Summarizer
 
 __all__ = [
     "CLASSIFIER_OPTIONS",
@@ -20,6 +22,8 @@ __all__ = [
     "MissingSecretError",
     "SummarizerName",
     "apply_confidence_floor",
+    "build_classifier",
+    "build_summarizer",
     "load_config",
 ]
 
@@ -110,6 +114,29 @@ def load_config() -> Config:
         bedrock_summarizer_model_id=bedrock_summarizer_model_id,
         anthropic_api_key=anthropic_api_key,
         anthropic_model=os.environ.get("ANTHROPIC_MODEL", "claude-opus-4-7"),
+    )
+
+
+def build_classifier(config: Config) -> Classifier:
+    """Build the Classifier implementation selected by config.
+
+    Real backends are wired in Phase F; until then, selecting them raises
+    NotImplementedError so the pipeline fails loud rather than silently
+    falling back to mock.
+    """
+    if config.classifier == "mock":
+        return MockClassifier()
+    raise NotImplementedError(
+        f"Classifier backend {config.classifier!r} is not yet implemented (Phase F)."
+    )
+
+
+def build_summarizer(config: Config) -> Summarizer:
+    """Build the Summarizer implementation selected by config."""
+    if config.summarizer == "mock":
+        return MockSummarizer()
+    raise NotImplementedError(
+        f"Summarizer backend {config.summarizer!r} is not yet implemented (Phase F)."
     )
 
 
