@@ -5,8 +5,10 @@ LOUDLY at startup with MissingSecretError — never mid-pipeline.
 """
 
 from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
+from pytest_mock import MockerFixture
 
 from retina_screen.config import (
     CLASSIFIER_OPTIONS,
@@ -173,7 +175,15 @@ def test_floor_never_auto_clears_low_confidence_referable() -> None:
 # ─── Factory: build_classifier / build_summarizer ────────────────────────────
 
 
-def _mock_config(classifier: str = "mock", summarizer: str = "mock") -> Config:
+def _mock_config(
+    classifier: str = "mock",
+    summarizer: str = "mock",
+    *,
+    sagemaker_endpoint: str | None = None,
+    bedrock_classifier_model_id: str | None = None,
+    bedrock_summarizer_model_id: str | None = None,
+    anthropic_api_key: str | None = None,
+) -> Config:
     return Config(
         classifier=classifier,  # type: ignore[arg-type]
         summarizer=summarizer,  # type: ignore[arg-type]
@@ -182,10 +192,10 @@ def _mock_config(classifier: str = "mock", summarizer: str = "mock") -> Config:
         raw_image_bucket=None,
         results_table=None,
         eventbridge_bus=None,
-        sagemaker_endpoint=None,
-        bedrock_classifier_model_id=None,
-        bedrock_summarizer_model_id=None,
-        anthropic_api_key=None,
+        sagemaker_endpoint=sagemaker_endpoint,
+        bedrock_classifier_model_id=bedrock_classifier_model_id,
+        bedrock_summarizer_model_id=bedrock_summarizer_model_id,
+        anthropic_api_key=anthropic_api_key,
         anthropic_model="claude-opus-4-7",
     )
 
@@ -202,11 +212,69 @@ def test_build_summarizer_returns_mock_when_selected() -> None:
     assert isinstance(summarizer, Summarizer)
 
 
-def test_build_classifier_raises_for_unimplemented_backend() -> None:
-    with pytest.raises(NotImplementedError, match="Phase F"):
-        build_classifier(_mock_config(classifier="sagemaker"))
+def test_build_classifier_returns_sagemaker_when_selected(
+    mocker: MockerFixture,
+) -> None:
+    """boto3.client patched so no real client / socket is created."""
+    from retina_screen.ml.classifier import SageMakerClassifier
+
+    fake_client = MagicMock()
+    mocker.patch("retina_screen.config.boto3.client", return_value=fake_client)
+
+    classifier = build_classifier(
+        _mock_config(classifier="sagemaker", sagemaker_endpoint="my-endpoint")
+    )
+    assert isinstance(classifier, SageMakerClassifier)
+    assert classifier.endpoint_name == "my-endpoint"
+    assert classifier.client is fake_client
 
 
-def test_build_summarizer_raises_for_unimplemented_backend() -> None:
-    with pytest.raises(NotImplementedError, match="Phase F"):
-        build_summarizer(_mock_config(summarizer="anthropic"))
+def test_build_classifier_returns_bedrock_when_selected(
+    mocker: MockerFixture,
+) -> None:
+    from retina_screen.ml.classifier import BedrockImageClassifier
+
+    fake_client = MagicMock()
+    mocker.patch("retina_screen.config.boto3.client", return_value=fake_client)
+
+    classifier = build_classifier(
+        _mock_config(
+            classifier="bedrock",
+            bedrock_classifier_model_id="anthropic.claude-3",
+        )
+    )
+    assert isinstance(classifier, BedrockImageClassifier)
+    assert classifier.model_id == "anthropic.claude-3"
+
+
+def test_build_summarizer_returns_bedrock_when_selected(
+    mocker: MockerFixture,
+) -> None:
+    from retina_screen.ml.summarizer import BedrockSummarizer
+
+    fake_client = MagicMock()
+    mocker.patch("retina_screen.config.boto3.client", return_value=fake_client)
+
+    summarizer = build_summarizer(
+        _mock_config(
+            summarizer="bedrock",
+            bedrock_summarizer_model_id="anthropic.claude-3-haiku",
+        )
+    )
+    assert isinstance(summarizer, BedrockSummarizer)
+    assert summarizer.model_id == "anthropic.claude-3-haiku"
+
+
+def test_build_summarizer_returns_anthropic_when_selected(
+    mocker: MockerFixture,
+) -> None:
+    """anthropic.Anthropic patched so no real API client is created."""
+    from retina_screen.ml.summarizer import AnthropicSummarizer
+
+    fake_client = MagicMock()
+    mocker.patch("anthropic.Anthropic", return_value=fake_client)
+
+    summarizer = build_summarizer(_mock_config(summarizer="anthropic", anthropic_api_key="sk-test"))
+    assert isinstance(summarizer, AnthropicSummarizer)
+    assert summarizer.model == "claude-opus-4-7"
+    assert summarizer.client is fake_client

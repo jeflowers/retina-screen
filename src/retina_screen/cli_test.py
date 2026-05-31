@@ -221,12 +221,11 @@ def test_cli_screen_command_exits_nonzero_on_missing_secret(
     assert "ANTHROPIC_API_KEY" in result.stderr
 
 
-def test_cli_screen_command_exits_nonzero_on_unimplemented_backend(
+def test_cli_screen_command_exits_nonzero_on_unknown_backend(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Selecting a real backend (Phase F territory) fails loud, not silently."""
-    monkeypatch.setenv("RETINA_CLASSIFIER", "sagemaker")
-    monkeypatch.setenv("SAGEMAKER_ENDPOINT", "fake-endpoint")
+    """Picking a typo'd backend name fails loud at config load with MissingSecretError."""
+    monkeypatch.setenv("RETINA_CLASSIFIER", "openai")  # not a valid option
 
     runner = CliRunner()
     result = runner.invoke(
@@ -241,4 +240,4 @@ def test_cli_screen_command_exits_nonzero_on_unimplemented_backend(
     )
 
     assert result.exit_code == 1
-    assert "not yet implemented" in result.stderr.lower() or "phase f" in result.stderr.lower()
+    assert "RETINA_CLASSIFIER" in result.stderr

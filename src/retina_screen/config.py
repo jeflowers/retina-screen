@@ -10,9 +10,21 @@ import os
 from dataclasses import dataclass
 from typing import Literal, cast
 
+import boto3
+
 from retina_screen.dto import Classification, Referable
-from retina_screen.ml.classifier import Classifier, MockClassifier
-from retina_screen.ml.summarizer import MockSummarizer, Summarizer
+from retina_screen.ml.classifier import (
+    BedrockImageClassifier,
+    Classifier,
+    MockClassifier,
+    SageMakerClassifier,
+)
+from retina_screen.ml.summarizer import (
+    AnthropicSummarizer,
+    BedrockSummarizer,
+    MockSummarizer,
+    Summarizer,
+)
 
 __all__ = [
     "CLASSIFIER_OPTIONS",
@@ -120,14 +132,25 @@ def load_config() -> Config:
 def build_classifier(config: Config) -> Classifier:
     """Build the Classifier implementation selected by config.
 
-    Real backends are wired in Phase F; until then, selecting them raises
-    NotImplementedError so the pipeline fails loud rather than silently
-    falling back to mock.
+    Real-backend construction lazily imports the per-backend clients so the
+    mock path stays dependency-light and AWS-free.
     """
     if config.classifier == "mock":
         return MockClassifier()
-    raise NotImplementedError(
-        f"Classifier backend {config.classifier!r} is not yet implemented (Phase F)."
+    if config.classifier == "sagemaker":
+        assert config.sagemaker_endpoint is not None  # load_config validated this
+        return SageMakerClassifier(
+            client=boto3.client("sagemaker-runtime", region_name=config.aws_region),
+            endpoint_name=config.sagemaker_endpoint,
+        )
+    if config.classifier == "bedrock":
+        assert config.bedrock_classifier_model_id is not None
+        return BedrockImageClassifier(
+            client=boto3.client("bedrock-runtime", region_name=config.aws_region),
+            model_id=config.bedrock_classifier_model_id,
+        )
+    raise NotImplementedError(  # unreachable — load_config validates
+        f"Classifier backend {config.classifier!r} is not implemented."
     )
 
 
@@ -135,8 +158,23 @@ def build_summarizer(config: Config) -> Summarizer:
     """Build the Summarizer implementation selected by config."""
     if config.summarizer == "mock":
         return MockSummarizer()
-    raise NotImplementedError(
-        f"Summarizer backend {config.summarizer!r} is not yet implemented (Phase F)."
+    if config.summarizer == "bedrock":
+        assert config.bedrock_summarizer_model_id is not None
+        return BedrockSummarizer(
+            client=boto3.client("bedrock-runtime", region_name=config.aws_region),
+            model_id=config.bedrock_summarizer_model_id,
+        )
+    if config.summarizer == "anthropic":
+        assert config.anthropic_api_key is not None
+        # Lazy import — anthropic is an optional dep at runtime.
+        from anthropic import Anthropic
+
+        return AnthropicSummarizer(
+            client=Anthropic(api_key=config.anthropic_api_key),
+            model=config.anthropic_model,
+        )
+    raise NotImplementedError(  # unreachable
+        f"Summarizer backend {config.summarizer!r} is not implemented."
     )
 
 

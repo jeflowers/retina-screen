@@ -838,6 +838,7 @@ anthropic = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "boto3-stubs", extra = ["bedrock-runtime", "dynamodb", "events", "s3", "sagemaker-runtime"] },
     { name = "mypy" },
     { name = "pytest" },
@@ -859,6 +860,7 @@ provides-extras = ["anthropic"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=0.34" },
     { name = "boto3-stubs", extras = ["s3", "dynamodb", "events", "sagemaker-runtime", "bedrock-runtime"], specifier = ">=1.34" },
     { name = "mypy", specifier = ">=1.11" },
     { name = "pytest", specifier = ">=8.3" },
