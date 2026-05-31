@@ -13,8 +13,10 @@ from pytest_mock import MockerFixture
 from retina_screen.config import (
     CLASSIFIER_OPTIONS,
     SUMMARIZER_OPTIONS,
+    ClassifierName,
     Config,
     MissingSecretError,
+    SummarizerName,
     apply_confidence_floor,
     build_classifier,
     build_summarizer,
@@ -72,6 +74,14 @@ def test_classifier_and_summarizer_option_lists() -> None:
     assert "mock" in SUMMARIZER_OPTIONS
     assert "anthropic" in SUMMARIZER_OPTIONS
     assert "sagemaker" in CLASSIFIER_OPTIONS
+
+
+def test_name_aliases_match_option_lists() -> None:
+    """ClassifierName/SummarizerName Literals must enumerate the same set as OPTIONS."""
+    from typing import get_args
+
+    assert set(get_args(ClassifierName)) == set(CLASSIFIER_OPTIONS)
+    assert set(get_args(SummarizerName)) == set(SUMMARIZER_OPTIONS)
 
 
 # ─── Unknown values fail loud ────────────────────────────────────────────────

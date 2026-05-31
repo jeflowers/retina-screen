@@ -13,9 +13,11 @@ from retina_screen.dto import (
     Classification,
     ClinicalSummary,
     EncounterMeta,
+    Eye,
     ReferralNeeded,
     ScreeningCompleted,
     ScreeningResult,
+    Urgency,
 )
 
 
@@ -197,6 +199,14 @@ def test_referral_needed_event() -> None:
         }
     )
     assert e.event_type == "ReferralNeeded"
+
+
+def test_type_aliases_have_expected_values() -> None:
+    """The Eye / Urgency Literal aliases pin the allowed values used elsewhere."""
+    from typing import get_args
+
+    assert set(get_args(Eye)) == {"L", "R"}
+    assert set(get_args(Urgency)) == {"routine", "soon", "urgent"}
 
 
 def test_screening_completed_event() -> None:
