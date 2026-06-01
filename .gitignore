@@ -1,5 +1,7 @@
 CLAUDE.local.md
 .claude/settings.local.json
+# Runbook draft — review before deciding whether to commit
+BUILD.md
 # Python / uv
 __pycache__/
 *.py[cod]
