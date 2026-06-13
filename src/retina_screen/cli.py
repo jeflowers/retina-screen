@@ -37,6 +37,7 @@ from retina_screen.config import (
 )
 from retina_screen.dto import EncounterMeta, ScreeningResult
 from retina_screen.events import emit_screening_event
+from retina_screen.learning.demo import run_demo
 from retina_screen.logging_setup import setup_logging
 from retina_screen.ml.classifier import Classifier
 from retina_screen.ml.summarizer import Summarizer
@@ -184,6 +185,21 @@ def screen(
     result = run_pipeline(deps, image_bytes, meta)
 
     typer.echo(result.model_dump_json(indent=2))
+
+
+@app.command("metrics-demo")
+def metrics_demo(
+    count: Annotated[
+        int, typer.Option("--count", "-n", help="Number of synthetic encounters.")
+    ] = 200,
+) -> None:
+    """Print synthetic program (QI) + eval metrics — a demo of the learning loop.
+
+    Uses fabricated data only (no real PHI); see `retina_screen.learning`.
+    """
+    program, evaluation = run_demo(count)
+    typer.echo(program.model_dump_json(indent=2))
+    typer.echo(evaluation.model_dump_json(indent=2))
 
 
 def main() -> None:

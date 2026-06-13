@@ -192,7 +192,7 @@ def test_cli_screen_command_runs_end_to_end_with_samples(
     # stdout is the JSON ScreeningResult; stderr holds the structlog lines.
     parsed = json.loads(result.stdout)
     assert parsed["meta"]["encounter_id"] == "enc_2026_05_28_0001"
-    assert parsed["meta"]["site_id"] == "site_guam_clinic_01"
+    assert parsed["meta"]["site_id"] == "site_demo_clinic_01"
     assert parsed["classification"]["model_name"] == "mock-classifier"
     assert "screening aid" in parsed["summary"]["disclaimer"]
     assert parsed["final_referable"] in ("yes", "no", "review")
@@ -241,3 +241,13 @@ def test_cli_screen_command_exits_nonzero_on_unknown_backend(
 
     assert result.exit_code == 1
     assert "RETINA_CLASSIFIER" in result.stderr
+
+
+def test_cli_metrics_demo_runs_on_synthetic_data() -> None:
+    """`metrics-demo` prints program + eval JSON from fabricated data; exits 0, no network."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["metrics-demo", "-n", "5"])
+
+    assert result.exit_code == 0, f"stderr was:\n{result.stderr}"
+    assert '"screened": 5' in result.stdout
+    assert '"sensitivity"' in result.stdout
