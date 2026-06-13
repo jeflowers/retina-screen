@@ -2,7 +2,7 @@
 # All values are synthetic. No real PHI.
 encounter_id: enc_2026_05_28_0001
 patient_pseudo_id: pt_abc123
-site_id: site_guam_clinic_01
+site_id: site_demo_clinic_01
 eye: L            # L or R
 capture_device: topcon_nw400
 captured_at: 2026-05-28T14:30:00Z

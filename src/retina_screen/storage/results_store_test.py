@@ -132,11 +132,11 @@ def test_put_screening_result_idempotent_double_call() -> None:
 def test_top_level_attributes_support_per_site_and_per_patient_queries() -> None:
     """The flattened keys make site/patient queries possible without unpacking `result`."""
     table = MagicMock()
-    put_screening_result(table, _result(site_id="site_guam_01"))
+    put_screening_result(table, _result(site_id="site_demo_01"))
 
     item: dict[str, Any] = table.put_item.call_args.kwargs["Item"]
     # PK (site_id) — per-site query partition
-    assert item["site_id"] == "site_guam_01"
+    assert item["site_id"] == "site_demo_01"
     # GSI partition — per-patient query
     assert "patient_pseudo_id" in item
     # Sortable by created_at within a partition

@@ -120,7 +120,7 @@ model said. A low-confidence prediction never auto-clears. See
 
 ```
 Primary table:
-  PK = site_id          ← per-site queries: "all encounters at site_guam_clinic_01"
+  PK = site_id          ← per-site queries: "all encounters at site_demo_clinic_01"
   SK = encounter_id     ← uniqueness within a site; sorts as the encounter key
 
 GSI:
