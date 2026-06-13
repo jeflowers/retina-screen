@@ -2,6 +2,8 @@ CLAUDE.local.md
 .claude/settings.local.json
 # Runbook draft — review before deciding whether to commit
 BUILD.md
+# Local-only scratch: source material, installers, confidential docs — never commit
+resources/
 # Python / uv
 __pycache__/
 *.py[cod]
